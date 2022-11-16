@@ -23,13 +23,7 @@ Window.clearcolor = (100, 100, 255, 1)
 
 from pygame.locals import *
 
-'''
-pygame.init()
-screen = pygame.display.set_mode((640, 480))
-pygame.display.set_caption("Battleships")
-pygame.mouse.set_visible(1)
-clock = pygame.time.Clock()
-'''
+
 logger = logging.getLogger('battleships')
 
 
