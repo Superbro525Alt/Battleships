@@ -22,8 +22,16 @@ from kivy.uix.screenmanager import ScreenManager, Screen, NoTransition, FadeTran
 Window.clearcolor = (100, 100, 255, 1)
 
 from pygame.locals import *
-
-
+blockSize = 80
+WINDOWWIDTH = 640
+WINDOWHEIGHT = 480
+'''
+pygame.init()
+screen = pygame.display.set_mode((640, 480))
+pygame.display.set_caption("Battleships")
+pygame.mouse.set_visible(1)
+clock = pygame.time.Clock()
+'''
 logger = logging.getLogger('battleships')
 
 
@@ -36,19 +44,19 @@ class tile():
     def draw(self, screen):
         assert isinstance(screen, pygame.Surface)
         if self.type == "shipPart":
-            pygame.draw.rect(screen, (0, 0, 0), (self.x, self.y, 20, 20))
+            pygame.draw.rect(screen, (0, 0, 0), (self.x, self.y, blockSize, blockSize))
         elif self.type == "shipPartHit":
-            pygame.draw.rect(screen, (255, 0, 0), (self.x, self.y, 20, 20))
+            pygame.draw.rect(screen, (255, 0, 0), (self.x, self.y, blockSize, blockSize))
         elif self.type == "enemyShipPartHit":
-            pygame.draw.rect(screen, (255, 255, 0), (self.x, self.y, 20, 20))
+            pygame.draw.rect(screen, (255, 255, 0), (self.x, self.y, blockSize, blockSize))
         elif self.type == "Water":
-            pygame.draw.rect(screen, (0, 0, 255), (self.x, self.y, 20, 20))
+            pygame.draw.rect(screen, (0, 0, 255), (self.x, self.y, blockSize, blockSize))
         elif self.type == "WaterHit":
-            pygame.draw.rect(screen, (255, 0, 0), (self.x, self.y, 20, 20))
+            pygame.draw.rect(screen, (0, 0, 255), (self.x, self.y, blockSize, blockSize))
         elif self.type == "Land":
-            pygame.draw.rect(screen, (0, 255, 0), (self.x, self.y, 20, 20))
+            pygame.draw.rect(screen, (0, 255, 0), (self.x, self.y, blockSize, blockSize))
         elif self.type == "LandHit":
-            pygame.draw.rect(screen, (255, 0, 0), (self.x, self.y, 20, 20))
+            pygame.draw.rect(screen, (255, 0, 0), (self.x, self.y, blockSize, blockSize))
         else:
             logger.error("Unknown tile type: %s" % self.type)
             sys.exit()
@@ -121,6 +129,7 @@ class player():
         self.shotsHit = tileGroup()
         self.shotsMissed = tileGroup()
         self.enemyShipsHit = tileGroup()
+        self.water = tileGroup()
 
         self.s = socket.socket()
         self.host = socket.gethostname()
@@ -200,22 +209,50 @@ class player():
             self.addShipHit(x, y)
             return "hit"
         else:
-            self.addShotMiss(x, y)
+            #self.addShotMiss(x, y)
             return "miss"
 
-    def draw(self, screen, excludes=[]):
-        if "ships" not in excludes:
-            self.ships.draw(screen)
-        if "shipsHit" not in excludes:
-            self.shipsHit.draw(screen)
-        if "shots" not in excludes:
-            self.shots.draw(screen)
-        if "shotsHit" not in excludes:
-            self.shotsHit.draw(screen)
-        if "shotsMissed" not in excludes:
-            self.shotsMissed.draw(screen)
-        if "enemyShipsHit" not in excludes:
-            self.enemyShipsHit.draw(screen)
+    def fillEmptyTiles(self):
+
+        for x in range(0, WINDOWWIDTH, blockSize):
+            for y in range(0, WINDOWHEIGHT, blockSize):
+                if self.ships.getTile(x, y) == None:
+                    self.water.addTile(tile(x, y, "Water"))
+        pygame.display.flip()
+
+
+    def draw(self, screen, excludes=[], onlyRender=[]):
+        if len(onlyRender) > 0:
+            if "ships" in onlyRender:
+                self.ships.draw(screen)
+            if "shipsHit" in onlyRender:
+                self.shipsHit.draw(screen)
+            if "shots" in onlyRender:
+                self.shots.draw(screen)
+            if "shotsHit" in onlyRender:
+                self.shotsHit.draw(screen)
+            if "shotsMissed" in onlyRender:
+                self.shotsMissed.draw(screen)
+            if "enemyShipsHit" in onlyRender:
+                self.enemyShipsHit.draw(screen)
+            if "water" in onlyRender:
+                self.water.draw(screen)
+        else:
+            if "ships" not in excludes:
+                self.ships.draw(screen)
+            if "shipsHit" not in excludes:
+                self.shipsHit.draw(screen)
+            if "shots" not in excludes:
+                self.shots.draw(screen)
+            if "shotsHit" not in excludes:
+                self.shotsHit.draw(screen)
+            if "shotsMissed" not in excludes:
+                self.shotsMissed.draw(screen)
+            if "enemyShipsHit" not in excludes:
+                self.enemyShipsHit.draw(screen)
+            if "water" not in excludes:
+                self.fillEmptyTiles(640, 480)
+                self.water.draw(screen)
         pygame.display.flip()
 
 
@@ -245,12 +282,12 @@ class player():
         font = pygame.font.SysFont(font, size)
         label = font.render(text, 1, color)
         screen.blit(label, (width, height))
-        pygame.display.flip()
+
     def renderSelection(self, screen):
         assert isinstance(screen, pygame.Surface)
         screen.fill((255, 255, 255))
         while True:
-            self.drawGrid(640, 480, screen)
+            self.drawGrid(screen)
 
             font = pygame.font.SysFont("monospace", 30)
             label = font.render("Select your ships", 15, (255, 0, 0))
@@ -262,14 +299,14 @@ class player():
                 if event.type == pygame.MOUSEBUTTONDOWN and len(self.ships.tiles) < 5:
                     isThere = False
                     x, y = pygame.mouse.get_pos()
-                    x = int(x / 20) * 20
-                    y = int(y / 20) * 20
-                    for i in range(0, 20):
+                    x = int(x / blockSize) * blockSize
+                    y = int(y / blockSize) * blockSize
+                    for i in range(0, blockSize):
                         if self.ships.getTile(x + i, y + i) != None:
                             isThere = True
                     if not isThere:
                         self.addShip(x, y)
-                        self.draw(screen)
+                        self.draw(screen, excludes=["water"])
                         print("there is no ship at %s,%s" % (x, y))
                     else:
                         print("there is a ship at %s,%s" % (x, y))
@@ -289,10 +326,9 @@ class player():
                         screen.blit(label, (10, 10))
                         pygame.display.flip()
 
-    def drawGrid(self, WINDOW_WIDTH, WINDOW_HEIGHT, SCREEN):
-        blockSize = 20  # Set the size of the grid block
-        for x in range(0, WINDOW_WIDTH, blockSize):
-            for y in range(0, WINDOW_HEIGHT, blockSize):
+    def drawGrid(self, SCREEN):
+        for x in range(0, WINDOWWIDTH, blockSize):
+            for y in range(0, WINDOWHEIGHT, blockSize):
                 rect = pygame.Rect(x, y, blockSize, blockSize)
                 pygame.draw.rect(SCREEN, (0, 0, 0), rect, 1)
         pygame.display.flip()
@@ -312,30 +348,31 @@ class player():
 
             screen.fill((255, 255, 255))
 
-            self.drawGrid(640, 480, screen)
+            self.drawGrid(screen)
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     sys.exit()
                     pygame.quit()
                 if not self.turn:
                     self.renderText("Opponents Move...", screen)
-                    self.draw(screen)
+                    self.draw(screen, excludes=["water"])
                     move = self.getMove()
                     self.sendData(self.checkHit(int(move.split(" ")[0]), int(move.split(" ")[1])))
                     self.turn = True
                 else:
                     self.renderText("Your Move...", screen)
-                    self.draw(screen, excludes=["ships", "shipsHit"])
+                    self.draw(screen, onlyRender=["shotsHit"])
 
                 if event.type == pygame.MOUSEBUTTONDOWN and self.turn:
                     self.turn = False
                     x, y = pygame.mouse.get_pos()
-                    x = int(x / 20) * 20
-                    y = int(y / 20) * 20
+                    x = int(x / blockSize) * blockSize
+                    y = int(y / blockSize) * blockSize
                     self.sendMove(x, y)
-                    if self.receiveData() == "hit":
+                    data = self.receiveData()
+                    if data == "hit":
                         self.addEnemyShipHit(x, y)
-                    else:
+                    if data == "miss":
                         self.addShotMiss(x, y)
                     if self.shipsHit.tiles == self.ships.tiles:
                         pass
@@ -353,7 +390,7 @@ def host():
         global screen
         global clock
         pygame.init()
-        screen = pygame.display.set_mode((640, 480))
+        screen = pygame.display.set_mode((WINDOWWIDTH, WINDOWHEIGHT))
         pygame.display.set_caption("Battleships")
         pygame.mouse.set_visible(1)
         clock = pygame.time.Clock()
@@ -384,7 +421,7 @@ def connect():
         global clock
         global screen
         pygame.init()
-        screen = pygame.display.set_mode((640, 480))
+        screen = pygame.display.set_mode((WINDOWWIDTH, WINDOWHEIGHT))
         pygame.display.set_caption("Battleships")
         pygame.mouse.set_visible(1)
         clock = pygame.time.Clock()
