@@ -380,7 +380,7 @@ class player():
                         self.drawGrid(screen)
 
                         self.renderText("Your Move...", screen)
-                        self.draw(screen, onlyRender=["shotsHit"])
+                        self.draw(screen, onlyRender=["shotsHit", "enemyShipsHit"])
                         self.drawn = True
 
                     if event.type == pygame.MOUSEBUTTONDOWN and self.turn:
