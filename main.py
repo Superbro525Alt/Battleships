@@ -343,39 +343,47 @@ class player():
             self.turn = True
         else:
             self.turn = False
+        self.drawn = False
         while True:
 
 
-            screen.fill((255, 255, 255))
 
-            self.drawGrid(screen)
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     sys.exit()
                     pygame.quit()
                 if not self.turn:
+                    screen.fill((255, 255, 255))
+                    self.drawGrid(screen)
+
                     self.renderText("Opponents Move...", screen)
                     self.draw(screen, excludes=["water"])
                     move = self.getMove()
                     self.sendData(self.checkHit(int(move.split(" ")[0]), int(move.split(" ")[1])))
                     self.turn = True
                 else:
-                    self.renderText("Your Move...", screen)
-                    self.draw(screen, onlyRender=["shotsHit"])
+                    if self.drawn == False:
+                        screen.fill((255, 255, 255))
+                        self.drawGrid(screen)
 
-                if event.type == pygame.MOUSEBUTTONDOWN and self.turn:
-                    self.turn = False
-                    x, y = pygame.mouse.get_pos()
-                    x = int(x / blockSize) * blockSize
-                    y = int(y / blockSize) * blockSize
-                    self.sendMove(x, y)
-                    data = self.receiveData()
-                    if data == "hit":
-                        self.addEnemyShipHit(x, y)
-                    if data == "miss":
-                        self.addShotMiss(x, y)
-                    if self.shipsHit.tiles == self.ships.tiles:
-                        pass
+                        self.renderText("Your Move...", screen)
+                        self.draw(screen, onlyRender=["shotsHit"])
+                        self.drawn = True
+
+                    if event.type == pygame.MOUSEBUTTONDOWN and self.turn:
+                        self.turn = False
+                        x, y = pygame.mouse.get_pos()
+                        x = int(x / blockSize) * blockSize
+                        y = int(y / blockSize) * blockSize
+                        self.sendMove(x, y)
+                        data = self.receiveData()
+                        if data == "hit":
+                            self.addEnemyShipHit(x, y)
+                        if data == "miss":
+                            self.addShotMiss(x, y)
+                        if self.shipsHit.tiles == self.ships.tiles:
+                            pass
+                        self.drawn = False
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_RETURN:
                         return
