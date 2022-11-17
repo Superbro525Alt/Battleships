@@ -140,8 +140,8 @@ class player():
         if isHost:
             self.s.bind((self.host, self.port))
 
-    def connect(self, server="10.150.32.57"):
-        if server == None:
+    def connect(self, server="localhost"):
+        if server == 'localhost':
             print(self.host)
             self.s.connect((self.host, self.port))
             print(f"Connected to host: {self.host}, {self.port}")
@@ -272,6 +272,11 @@ class player():
             label = font.render("Waiting for opponent...", 1, (0, 0, 0))
             screen.blit(label, (10, 10))
             pygame.display.flip()
+
+            font = pygame.font.SysFont("monospace", 15)
+            label = font.render(f"IP: {socket.gethostbyname(socket.gethostbyname(self.host))}", 1, (0, 0, 0))
+            screen.blit(label, (10, 30))
+            pygame.display.flip()
         else:
             screen.fill((255, 255, 255))
             font = pygame.font.SysFont("monospace", 15)
@@ -320,11 +325,12 @@ class player():
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_RETURN and len(self.ships.tiles) == 5:
                         self.sendData("ready")
+                        label = font.render("""Select your ships | Waiting for other player""", 1, (0, 0, 0))
+                        screen.blit(label, (10, 10))
+                        pygame.display.flip()
+                        time.sleep(0.5)
                         while self.receiveData() != "ready":
-                            label = font.render("""Select your ships | Waiting for other player""", 1, (0, 0, 0))
-                            screen.blit(label, (10, 10))
-                            pygame.display.flip()
-                            time.sleep(0.5)
+                            pass
 
                         return
 
@@ -364,7 +370,7 @@ class player():
                     self.drawGrid(screen)
 
                     self.renderText("Opponents Move...", screen)
-                    self.draw(screen, excludes=["water"])
+                    self.draw(screen, excludes=["water", "shotsHit"])
                     move = self.getMove()
                     self.sendData(self.checkHit(int(move.split(" ")[0]), int(move.split(" ")[1])))
                     self.turn = True
