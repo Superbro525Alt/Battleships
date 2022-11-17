@@ -134,15 +134,22 @@ class player():
         self.s = socket.socket()
         self.host = socket.gethostname()
 
+
         self.port = 65053
         self.isHost = isHost
         if isHost:
             self.s.bind((self.host, self.port))
 
-    def connect(self):
-        self.s.connect((self.host, self.port))
-        print(f"Connected to host: {self.host}, {self.port}")
-        logger.info("Connected to server")
+    def connect(self, server="10.150.32.57"):
+        if server == None:
+            print(self.host)
+            self.s.connect((self.host, self.port))
+            print(f"Connected to host: {self.host}, {self.port}")
+            logger.info("Connected to server")
+        else:
+            self.s.connect((server, self.port))
+            print(f"Connected to host: {server}, {self.port}")
+            logger.info("Connected to server")
 
     def hostGame(self):
         self.getConnection()
@@ -424,7 +431,7 @@ def host():
     p.renderGame(screen)
 
 
-def connect():
+def connect(ip):
     try:
         global clock
         global screen
@@ -439,7 +446,7 @@ def connect():
 
     global p
     p = player(str(random.randint(0, 1000)))
-    p.connect()
+    p.connect(ip)
 
     try:
         p.renderLobby(screen, host=False)
@@ -471,7 +478,15 @@ class mainMenu(Screen):
 
     def joinGame(self, *args):
         logger.info("Joining game")
-        connect()
+        self.layout_ = BoxLayout(orientation='vertical')
+        ip = TextInput(multiline=False)
+        self.layout_.add_widget(ip)
+        self.layout_.add_widget(Button(text="Connect", on_press=lambda *args: connect(ip.text)))
+
+        p = Popup(title="Enter IP", content=self.layout_, size_hint=(None, None), size=(400, 400))
+        p.open()
+
+
 
     def quitGame(self, *args):
         logger.info("Quitting game")
