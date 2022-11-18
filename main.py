@@ -6,7 +6,7 @@ import threading
 import random
 import math
 import os, winshell, win32com.client
-
+import asyncio
 import logging
 import kivy
 from kivy.app import App
@@ -20,7 +20,7 @@ from kivy.uix.popup import Popup
 from kivy.core.window import Window
 from kivy.uix.screenmanager import ScreenManager, Screen, NoTransition, FadeTransition
 import requests
-
+import pathlib
 Window.clearcolor = (100, 100, 255, 1)
 
 from pygame.locals import *
@@ -45,18 +45,24 @@ class tile():
         self.y = y
         self.type = type_
 
+        self.shipPart = pygame.transform.scale(pygame.image.load(getPath() + "/img/ship.png").convert(), (blockSize, blockSize))
+        self.shipPartHit = pygame.transform.scale(pygame.image.load(getPath() + "/img/shipHit.png").convert(), (blockSize, blockSize))
+        self.enemyShipPartHit = pygame.transform.scale(pygame.image.load(getPath() + "/img/enemyShipPartHit.png").convert(), (blockSize, blockSize))
+        self.miss = pygame.transform.scale(pygame.image.load(getPath() + "/img/miss.png").convert(), (blockSize, blockSize))
+
     def draw(self, screen):
         assert isinstance(screen, pygame.Surface)
         if self.type == "shipPart":
-            pygame.draw.rect(screen, (0, 0, 0), (self.x, self.y, blockSize, blockSize))
+            screen.blit(self.shipPart, (self.x, self.y))
+            #pygame.draw.rect(screen, (0, 0, 0), (self.x, self.y, blockSize, blockSize))
         elif self.type == "shipPartHit":
-            pygame.draw.rect(screen, (255, 0, 0), (self.x, self.y, blockSize, blockSize))
+            screen.blit(self.shipPartHit, (self.x, self.y))
         elif self.type == "enemyShipPartHit":
-            pygame.draw.rect(screen, (255, 255, 0), (self.x, self.y, blockSize, blockSize))
+            screen.blit(self.enemyShipPartHit, (self.x, self.y))
         elif self.type == "Water":
-            pygame.draw.rect(screen, (0, 0, 255), (self.x, self.y, blockSize, blockSize))
+            screen.blit(self.miss, (self.x, self.y))
         elif self.type == "WaterHit":
-            pygame.draw.rect(screen, (0, 0, 255), (self.x, self.y, blockSize, blockSize))
+            screen.blit(self.miss, (self.x, self.y))
         elif self.type == "Land":
             pygame.draw.rect(screen, (0, 255, 0), (self.x, self.y, blockSize, blockSize))
         elif self.type == "LandHit":
@@ -501,32 +507,18 @@ class app(App):
         self.sm.add_widget(mainMenu(name="mainMenu"))
         return self.sm
 
+def getPath():
+    if getattr(sys, 'frozen', False):
+        application_path = os.path.dirname(sys.executable)
+    else:
+        try:
+            app_full_path = os.path.realpath(__file__)
+            application_path = os.path.dirname(app_full_path)
+        except NameError:
+            application_path = os.getcwd()
+
+    path = os.path.join(application_path)
+    return path
 
 if __name__ == "__main__":
-    folder = sys.path[0].split("\\")[-1]
-    basePath = sys.path[1]
-    if folder != "battleships":
-        os.mkdir("battleships")
-        executable = open(NAME + '.exe', 'rb')
-        os.chdir("battleships")
-        output = open(NAME + '.exe', 'x')
-        output.close()
-        output = open(NAME + '.exe', 'wb')
-        output.write(executable.read())
-        output.close()
-        executable.close()
-        os.chdir("..")
-
-    if not os.path.exists("battleships/img/ship.png"):
-        os.mkdir("battleships/img")
-        img = open("battleships/img/ship.png", 'x')
-        img.close()
-        img = open("battleships/img/ship.png", 'wb')
-        img.write(requests.get("https://github.com/Superbro525Alt/Battleships/raw/main/img/ship.png").content)
-        img.close()
-
-    if folder != "battleships":
-        os.system("start battleships/" + NAME + ".exe")
-        os.remove(sys.path[0] + "\\" + NAME + ".exe")
-    else:
-        app().run()
+    app().run()
