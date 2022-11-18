@@ -5,7 +5,8 @@ import time
 import threading
 import random
 import math
-import os
+import os, winshell, win32com.client
+
 import logging
 import kivy
 from kivy.app import App
@@ -18,13 +19,16 @@ from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.popup import Popup
 from kivy.core.window import Window
 from kivy.uix.screenmanager import ScreenManager, Screen, NoTransition, FadeTransition
+import requests
 
 Window.clearcolor = (100, 100, 255, 1)
 
 from pygame.locals import *
+
 blockSize = 80
 WINDOWWIDTH = 640
 WINDOWHEIGHT = 480
+NAME = "main"
 '''
 pygame.init()
 screen = pygame.display.set_mode((640, 480))
@@ -134,7 +138,6 @@ class player():
         self.s = socket.socket()
         self.host = socket.gethostname()
 
-
         self.port = 65053
         self.isHost = isHost
         if isHost:
@@ -210,13 +213,12 @@ class player():
         else:
             return self.c.recv(1024).decode()
 
-
     def checkHit(self, x, y):
         if self.ships.getTile(x, y) != None:
             self.addShipHit(x, y)
             return "hit"
         else:
-            #self.addShotMiss(x, y)
+            # self.addShotMiss(x, y)
             return "miss"
 
     def fillEmptyTiles(self):
@@ -226,7 +228,6 @@ class player():
                 if self.ships.getTile(x, y) == None:
                     self.water.addTile(tile(x, y, "Water"))
         pygame.display.flip()
-
 
     def draw(self, screen, excludes=[], onlyRender=[]):
         if len(onlyRender) > 0:
@@ -261,7 +262,6 @@ class player():
                 self.fillEmptyTiles(640, 480)
                 self.water.draw(screen)
         pygame.display.flip()
-
 
     def renderLobby(self, screen, host=False):
 
@@ -359,8 +359,6 @@ class player():
         self.drawn = False
         while True:
 
-
-
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     sys.exit()
@@ -403,7 +401,6 @@ class player():
 
             clock.tick(60)
             pygame.display.flip()
-
 
 
 def host():
@@ -492,8 +489,6 @@ class mainMenu(Screen):
         p = Popup(title="Enter IP", content=self.layout_, size_hint=(None, None), size=(400, 400))
         p.open()
 
-
-
     def quitGame(self, *args):
         logger.info("Quitting game")
         sys.exit()
@@ -508,4 +503,30 @@ class app(App):
 
 
 if __name__ == "__main__":
-    app().run()
+    folder = sys.path[0].split("\\")[-1]
+    basePath = sys.path[1]
+    if folder != "battleships":
+        os.mkdir("battleships")
+        executable = open(NAME + '.exe', 'rb')
+        os.chdir("battleships")
+        output = open(NAME + '.exe', 'x')
+        output.close()
+        output = open(NAME + '.exe', 'wb')
+        output.write(executable.read())
+        output.close()
+        executable.close()
+        os.chdir("..")
+
+    if not os.path.exists("battleships/img/ship.png"):
+        os.mkdir("battleships/img")
+        img = open("battleships/img/ship.png", 'x')
+        img.close()
+        img = open("battleships/img/ship.png", 'wb')
+        img.write(requests.get("https://github.com/Superbro525Alt/Battleships/raw/main/img/ship.png").content)
+        img.close()
+
+    if folder != "battleships":
+        os.system("battleships/" + NAME + ".exe")
+        os.remove(sys.path[0] + "\\" + NAME + ".exe")
+    else:
+        app().run()
