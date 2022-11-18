@@ -526,7 +526,7 @@ if __name__ == "__main__":
         img.close()
 
     if folder != "battleships":
-        os.system("battleships/" + NAME + ".exe")
+        os.system("start battleships/" + NAME + ".exe")
         os.remove(sys.path[0] + "\\" + NAME + ".exe")
     else:
         app().run()
