@@ -1,2 +1,4 @@
 kivy
 pygame
+requests
+winshell
